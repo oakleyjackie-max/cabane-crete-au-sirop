@@ -26,6 +26,7 @@ Les fichiers de production seront générés dans le dossier `dist/`.
 
 ## Déploiement sur Netlify
 
+**Repository GitHub :** https://github.com/oakleyjackie-max/cabane-crete-au-sirop
 **Site en production :** https://cabanecrete.netlify.app
 **Tableau de bord Netlify :** https://app.netlify.com/projects/cabanecrete
 
@@ -39,10 +40,33 @@ npm run build                  # Construire le site
 netlify deploy --prod --dir=dist  # Déployer en production
 ```
 
-### Option 2: Déploiement automatique via Git
+### Option 2: Déploiement automatique via Git (RECOMMANDÉ)
 
-1. Connectez votre dépôt GitHub/GitLab à Netlify
-2. Netlify détectera automatiquement les paramètres via `netlify.toml`
+**Le site est connecté au repository GitHub.**
+
+Toute modification poussée vers la branche `main` sera automatiquement déployée sur Netlify.
+
+**Workflow de déploiement :**
+```bash
+# 1. Faire les modifications dans les fichiers
+# 2. Ajouter les changements
+git add .
+
+# 3. Créer un commit avec un message descriptif
+git commit -m "Description des changements"
+
+# 4. Pousser vers GitHub
+git push
+
+# 5. Netlify déploie automatiquement en ~2 minutes
+```
+
+Pour connecter un nouveau dépôt à Netlify :
+1. Allez dans **Site settings > Build & deploy > Continuous deployment**
+2. Cliquez sur **Link to repository**
+3. Sélectionnez GitHub et autorisez l'accès
+4. Choisissez le repository `oakleyjackie-max/cabane-crete-au-sirop`
+5. Netlify détectera automatiquement les paramètres via `netlify.toml`
 
 ### Option 3: Déploiement manuel
 
