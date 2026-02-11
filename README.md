@@ -30,6 +30,8 @@ Les fichiers de production seront générés dans le dossier `dist/`.
 **Site en production :** https://cabanecrete.netlify.app
 **Tableau de bord Netlify :** https://app.netlify.com/projects/cabanecrete
 
+> ✅ **Déploiement automatique activé** - Le site se déploie automatiquement à chaque push vers la branche `main`
+
 ### Option 1: Déploiement via Netlify CLI
 
 ```bash
