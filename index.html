@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/images/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Cabane Crête au Sirop - Réservez votre sirop d'érable artisanal du Québec" />
+    <title>Cabane Crête au Sirop - Réservation de Sirop d'Érable</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- Hidden form for Netlify to detect -->
+    <form name="reservation" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="nom" />
+      <input type="email" name="courriel" />
+      <input type="tel" name="telephone" />
+      <select name="produit"></select>
+      <input type="number" name="quantite" />
+      <input type="text" name="profil-prefere" />
+      <textarea name="instructions"></textarea>
+    </form>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

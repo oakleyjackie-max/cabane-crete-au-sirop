@@ -1,0 +1,32 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Required environment variables (set in Netlify Dashboard > Site settings > Environment variables):
+#   ADMIN_PASSWORD       — The shared admin login password (legacy, plaintext)
+#   ADMIN_PASSWORD_HASH  — Bcrypt hash of the admin password (preferred, more secure)
+#   ADMIN_JWT_SECRET     — A random secret for signing JWT tokens (min 32 chars)
+#
+# To generate a bcrypt hash: npx bcryptjs <your-password>
+# Or use: node -e "require('bcryptjs').hash('yourpassword', 10).then(h => console.log(h))"
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
