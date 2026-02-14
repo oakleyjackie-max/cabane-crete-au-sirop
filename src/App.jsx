@@ -1270,7 +1270,7 @@ function App() {
                   ))}
                 </div>
                 {cartError && <div className="cart-error-message">{cartError}</div>}
-                <button className="cart-checkout-btn" onClick={handleCheckout}>
+                <button className="cart-checkout-btn" onClick={(e) => { e.stopPropagation(); handleCheckout(); }}>
                   Envoyer
                 </button>
               </>
@@ -1523,6 +1523,8 @@ function App() {
                     onChange={handleChange}
                     required
                     placeholder="Votre nom complet"
+                    onInvalid={(e) => e.target.setCustomValidity('Veuillez entrer votre nom.')}
+                    onInput={(e) => e.target.setCustomValidity('')}
                   />
                 </div>
 
@@ -1536,6 +1538,8 @@ function App() {
                     onChange={handleChange}
                     required
                     placeholder="(514) 555-1234"
+                    onInvalid={(e) => e.target.setCustomValidity('Veuillez entrer votre numéro de téléphone.')}
+                    onInput={(e) => e.target.setCustomValidity('')}
                   />
                 </div>
               </div>
@@ -1549,6 +1553,8 @@ function App() {
                   value={formData.courriel}
                   onChange={handleChange}
                   placeholder="votre@courriel.com"
+                  onInvalid={(e) => e.target.setCustomValidity('Veuillez entrer une adresse courriel valide.')}
+                  onInput={(e) => e.target.setCustomValidity('')}
                 />
               </div>
 
