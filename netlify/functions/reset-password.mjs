@@ -63,7 +63,7 @@ export default async (request) => {
     }
 
     await clearRateLimit(request, "reset");
-    const token = await createToken();
+    const token = await createToken({ resetSession: true });
     return jsonResponse({ token });
   } catch (err) {
     console.error("Reset password error:", err);

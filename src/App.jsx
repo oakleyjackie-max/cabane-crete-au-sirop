@@ -239,6 +239,20 @@ async function apiResetPassword(answer) {
   } catch { return { error: 'Erreur réseau' } }
 }
 
+/** Change admin password (requires JWT) */
+async function apiChangePassword(token, currentPassword, newPassword) {
+  try {
+    const res = await fetch('/.netlify/functions/change-password', {
+      method: 'POST',
+      headers: authHeaders(token),
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+    const data = await res.json()
+    if (res.ok) return { success: true }
+    return { error: data.error || 'Erreur inconnue' }
+  } catch { return { error: 'Erreur réseau' } }
+}
+
 // Generate next reservation number
 const getNextNumber = (reservations) => {
   if (reservations.length === 0) return 1
@@ -497,6 +511,7 @@ function App() {
   // Cart state
   const [cart, setCart] = useState([])
   const [cartOpen, setCartOpen] = useState(false)
+  const [cartError, setCartError] = useState('')
   const [addedFeedback, setAddedFeedback] = useState(null)
 
   // Recipe section state
@@ -548,6 +563,10 @@ function App() {
   const [resetError, setResetError] = useState('')
   const [resetLoading, setResetLoading] = useState(false)
   const [resetSuccess, setResetSuccess] = useState(false)
+  const [resetNewPassword, setResetNewPassword] = useState('')
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('')
+  const [resetNewPwError, setResetNewPwError] = useState('')
+  const [resetNewPwLoading, setResetNewPwLoading] = useState(false)
 
   // Security question setup (inside admin panel)
   const [showSecuritySetup, setShowSecuritySetup] = useState(false)
@@ -555,6 +574,14 @@ function App() {
   const [securityAnswer, setSecurityAnswer] = useState('')
   const [securitySetupMsg, setSecuritySetupMsg] = useState('')
   const [securityConfigured, setSecurityConfigured] = useState(false)
+
+  // Change password (inside admin panel)
+  const [showChangePassword, setShowChangePassword] = useState(false)
+  const [cpCurrentPassword, setCpCurrentPassword] = useState('')
+  const [cpNewPassword, setCpNewPassword] = useState('')
+  const [cpConfirmPassword, setCpConfirmPassword] = useState('')
+  const [cpMsg, setCpMsg] = useState('')
+  const [cpLoading, setCpLoading] = useState(false)
 
   const reservationRef = useRef(null)
 
@@ -722,6 +749,9 @@ function App() {
     setResetError('')
     setResetAnswer('')
     setResetSuccess(false)
+    setResetNewPassword('')
+    setResetConfirmPassword('')
+    setResetNewPwError('')
     setResetLoading(true)
     setShowResetModal(true)
     const data = await apiGetSecurityQuestion()
@@ -734,7 +764,7 @@ function App() {
     }
   }
 
-  // Submit reset answer
+  // Submit reset answer — on success, show "set new password" step
   const handleResetSubmit = async (e) => {
     e.preventDefault()
     setResetError('')
@@ -742,27 +772,55 @@ function App() {
     const result = await apiResetPassword(resetAnswer)
     setResetLoading(false)
     if (result.token) {
+      // Store the token but stay in the modal for the new password step
       saveToken(result.token)
       setAdminToken(result.token)
       setAdminAuth(true)
-      setShowResetModal(false)
       setResetAnswer('')
+      setResetSuccess(true)
+    } else {
+      setResetError(result.error || 'Réponse incorrecte.')
+    }
+  }
+
+  // Set new password after security question reset
+  const handleResetNewPassword = async (e) => {
+    e.preventDefault()
+    setResetNewPwError('')
+    if (resetNewPassword.length < 8) {
+      setResetNewPwError('Le mot de passe doit contenir au moins 8 caractères.')
+      return
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetNewPwError('Les mots de passe ne correspondent pas.')
+      return
+    }
+    setResetNewPwLoading(true)
+    const result = await apiChangePassword(adminToken, '', resetNewPassword)
+    setResetNewPwLoading(false)
+    if (result.success) {
+      // Close modal and open admin panel
+      setShowResetModal(false)
+      setResetSuccess(false)
+      setResetNewPassword('')
+      setResetConfirmPassword('')
       setAdminOpen(true)
       // Load data
-      const settings = await apiGetSettings(result.token)
+      const settings = await apiGetSettings(adminToken)
       if (settings) {
         setOutOfStock(settings.outOfStock ?? false)
         setNotifEnabled(settings.notifEnabled ?? false)
       }
-      const serverData = await apiGetReservations(result.token)
+      const serverData = await apiGetReservations(adminToken)
       const current = (serverData && serverData !== 'UNAUTHORIZED') ? serverData : loadReservations()
       if (serverData && serverData !== 'UNAUTHORIZED') saveReservations(serverData)
       setReservations(current)
       notifLastCountRef.current = current.length
       saveNotifLastCount(current.length)
       setNewReservationCount(0)
+      loadSecurityStatus()
     } else {
-      setResetError(result.error || 'Réponse incorrecte.')
+      setResetNewPwError(result.error || 'Erreur lors du changement de mot de passe.')
     }
   }
 
@@ -782,6 +840,36 @@ function App() {
       setTimeout(() => setSecuritySetupMsg(''), 3000)
     } else {
       setSecuritySetupMsg('Erreur lors de la sauvegarde.')
+    }
+  }
+
+  // Change admin password from admin panel
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+    setCpMsg('')
+    if (!cpCurrentPassword || !cpNewPassword || !cpConfirmPassword) {
+      setCpMsg('Tous les champs sont requis.')
+      return
+    }
+    if (cpNewPassword.length < 8) {
+      setCpMsg('Le nouveau mot de passe doit contenir au moins 8 caractères.')
+      return
+    }
+    if (cpNewPassword !== cpConfirmPassword) {
+      setCpMsg('Les mots de passe ne correspondent pas.')
+      return
+    }
+    setCpLoading(true)
+    const result = await apiChangePassword(adminToken, cpCurrentPassword, cpNewPassword)
+    setCpLoading(false)
+    if (result.success) {
+      setCpMsg('✓ Mot de passe modifié avec succès!')
+      setCpCurrentPassword('')
+      setCpNewPassword('')
+      setCpConfirmPassword('')
+      setTimeout(() => setCpMsg(''), 3000)
+    } else {
+      setCpMsg(result.error || 'Erreur lors du changement de mot de passe.')
     }
   }
 
@@ -993,10 +1081,19 @@ function App() {
     })
   }
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    setCartError('')
+
+    if (cart.length === 0) {
+      setCartError('Votre panier est vide.')
+      return
+    }
+
+    // Close cart and scroll to reservation form, then submit
+    // submitOrder() handles all validation (nom, telephone) and shows errors on the main form
     setCartOpen(false)
-    // Scroll to reservation form — cart contents are read directly at submit time
     reservationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    await submitOrder()
   }
 
   const formatPhone = (value) => {
@@ -1022,13 +1119,21 @@ function App() {
     }))
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  // Core submission logic — used by both the form submit and the cart checkout button
+  const submitOrder = async () => {
     setError('')
 
     // Validate that at least one product is in the cart
     if (cart.length === 0) {
       setError('Veuillez ajouter au moins un produit à votre panier avant de réserver.')
+      reservationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+
+    // Validate required contact fields
+    if (!formData.nom.trim() || !formData.telephone.trim()) {
+      setError('Veuillez remplir votre nom et numéro de téléphone.')
+      reservationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
 
@@ -1098,6 +1203,11 @@ function App() {
     })
   }
 
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    await submitOrder()
+  }
+
   return (
     <div className="app">
 
@@ -1115,7 +1225,7 @@ function App() {
         <div className="header-right">
           <button
             className={`header-cart-btn ${cart.length > 0 ? 'has-items' : ''}`}
-            onClick={() => setCartOpen(!cartOpen)}
+            onClick={() => { setCartOpen(!cartOpen); setCartError(''); }}
             aria-label="Ouvrir le panier"
           >
             <span className="cart-icon">🛒</span>
@@ -1159,6 +1269,7 @@ function App() {
                     </div>
                   ))}
                 </div>
+                {cartError && <div className="cart-error-message">{cartError}</div>}
                 <button className="cart-checkout-btn" onClick={handleCheckout}>
                   Envoyer
                 </button>
@@ -1650,9 +1761,10 @@ function App() {
           <div className="footer-contact-block">
             <p className="footer-contact-title">Contact</p>
             <p className="footer-contact">
-              Jackie Oakley<br />
-              Courriel: oakley.jackie@gmail.com<br />
-              Téléphone: (819) 678-7139
+              👑 Le Roi du Bouillage: Pier-Luc Crête<br />
+              📱 Allô-Érable: (819) 740-2194<br />
+              📧 Érabmail: pierluc.crete@gmail.com<br />
+              📍 Sucrerie HQ: <a href="https://www.google.com/maps/search/?api=1&query=1580+chemin+des+Lacs+Tingwick+QC+J0A+1L0" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>1580 chemin des Lacs, Tingwick, QC, J0A 1L0</a>
             </p>
           </div>
         </div>
@@ -1706,6 +1818,9 @@ function App() {
               <button className="admin-export-btn" onClick={() => setShowSecuritySetup(s => !s)}>
                 🔐 Question Sécurité
               </button>
+              <button className="admin-export-btn" onClick={() => setShowChangePassword(s => !s)}>
+                🔑 Mot de passe
+              </button>
               <button
                 className="admin-toggle-btn admin-toggle-on"
                 onClick={handleAdminLogout}
@@ -1750,6 +1865,58 @@ function App() {
                   )}
                   <button type="submit" className="admin-export-btn" style={{ alignSelf: 'flex-start' }}>
                     💾 Enregistrer la question
+                  </button>
+                </form>
+              </div>
+            )}
+            {showChangePassword && (
+              <div className="admin-export-filters">
+                <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', padding: '0.5rem 1rem' }}>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#666' }}>
+                    Changez votre mot de passe administrateur. Le nouveau mot de passe doit contenir au moins 8 caractères.
+                  </p>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontWeight: 600, fontSize: '0.85rem' }}>
+                    Mot de passe actuel
+                    <input
+                      type="password"
+                      value={cpCurrentPassword}
+                      onChange={e => setCpCurrentPassword(e.target.value)}
+                      placeholder="Votre mot de passe actuel"
+                      required
+                      style={{ width: '100%', padding: '8px 10px', fontSize: '0.9rem', borderRadius: '6px', border: '1px solid #ccc' }}
+                    />
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontWeight: 600, fontSize: '0.85rem' }}>
+                    Nouveau mot de passe
+                    <input
+                      type="password"
+                      value={cpNewPassword}
+                      onChange={e => setCpNewPassword(e.target.value)}
+                      placeholder="Au moins 8 caractères"
+                      required
+                      minLength={8}
+                      style={{ width: '100%', padding: '8px 10px', fontSize: '0.9rem', borderRadius: '6px', border: '1px solid #ccc' }}
+                    />
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontWeight: 600, fontSize: '0.85rem' }}>
+                    Confirmer le nouveau mot de passe
+                    <input
+                      type="password"
+                      value={cpConfirmPassword}
+                      onChange={e => setCpConfirmPassword(e.target.value)}
+                      placeholder="Répétez le nouveau mot de passe"
+                      required
+                      minLength={8}
+                      style={{ width: '100%', padding: '8px 10px', fontSize: '0.9rem', borderRadius: '6px', border: '1px solid #ccc' }}
+                    />
+                  </label>
+                  {cpMsg && (
+                    <p className={`admin-password-msg ${cpMsg.startsWith('✓') ? 'success' : 'error'}`}>
+                      {cpMsg}
+                    </p>
+                  )}
+                  <button type="submit" className="admin-export-btn" style={{ alignSelf: 'flex-start' }} disabled={cpLoading}>
+                    {cpLoading ? '⏳ Enregistrement...' : '💾 Changer le mot de passe'}
                   </button>
                 </form>
               </div>
@@ -1947,7 +2114,7 @@ function App() {
       )}
 
       {/* Password Reset Modal (security question) */}
-      {showResetModal && !adminAuth && (
+      {showResetModal && (
         <div className="admin-overlay" onClick={() => setShowResetModal(false)}>
           <div className="admin-reset-panel" onClick={(e) => e.stopPropagation()}>
             <div className="admin-header">
@@ -1955,7 +2122,38 @@ function App() {
               <button className="admin-close-btn" onClick={() => setShowResetModal(false)}>✕</button>
             </div>
             <div className="admin-reset-body">
-              {resetLoading && !resetQuestion ? (
+              {resetSuccess ? (
+                <form onSubmit={handleResetNewPassword}>
+                  <div className="admin-reset-fields">
+                    <p className="admin-password-msg success" style={{ marginBottom: '0.75rem' }}>
+                      ✓ Question vérifiée! Définissez un nouveau mot de passe.
+                    </p>
+                    <label>Nouveau mot de passe</label>
+                    <input
+                      type="password"
+                      value={resetNewPassword}
+                      onChange={(e) => setResetNewPassword(e.target.value)}
+                      placeholder="Au moins 8 caractères"
+                      required
+                      minLength={8}
+                      autoFocus
+                    />
+                    <label>Confirmer le mot de passe</label>
+                    <input
+                      type="password"
+                      value={resetConfirmPassword}
+                      onChange={(e) => setResetConfirmPassword(e.target.value)}
+                      placeholder="Répétez le mot de passe"
+                      required
+                      minLength={8}
+                    />
+                  </div>
+                  {resetNewPwError && <p className="admin-password-msg error">{resetNewPwError}</p>}
+                  <button type="submit" className="admin-reset-submit" disabled={resetNewPwLoading}>
+                    {resetNewPwLoading ? 'Enregistrement…' : 'Enregistrer le nouveau mot de passe'}
+                  </button>
+                </form>
+              ) : resetLoading && !resetQuestion ? (
                 <p style={{ textAlign: 'center' }}>Chargement…</p>
               ) : !resetQuestion && resetError ? (
                 <p className="admin-password-msg error">{resetError}</p>

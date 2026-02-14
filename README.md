@@ -100,8 +100,8 @@ Configurez ces variables dans **Site configuration > Environment variables** sur
 
 | Variable | Description |
 |---|---|
-| `ADMIN_PASSWORD_HASH` | Hash bcrypt du mot de passe admin (recommandé). Générez-en un avec : `npx bcryptjs-cli hash "votre-mot-de-passe"` |
-| `ADMIN_PASSWORD` | Mot de passe en clair (fallback si `ADMIN_PASSWORD_HASH` n'est pas défini — **déconseillé**) |
+| `ADMIN_PASSWORD_HASH` | Hash bcrypt du mot de passe admin initial (recommandé). Générez-en un avec : `npx bcryptjs-cli hash "votre-mot-de-passe"`. Note : un mot de passe changé via le panneau admin (stocké en blob) prend priorité. |
+| `ADMIN_PASSWORD` | Mot de passe en clair (fallback si aucun hash n'est défini — **déconseillé**) |
 | `ADMIN_JWT_SECRET` | Secret aléatoire pour signer les tokens JWT (min. 32 caractères). Générez-en un avec : `openssl rand -base64 48` |
 
 ## Images requises
@@ -134,12 +134,18 @@ Cliquez sur l'icône ⚙ en bas à droite de la page pour accéder au panneau d'
 - Plusieurs administrateurs peuvent se connecter avec le même mot de passe depuis différents appareils.
 - Les tentatives de connexion sont limitées à 5 par 15 minutes par adresse IP.
 
+### Changement de mot de passe
+
+- Dans le panneau admin, cliquez sur **🔑 Mot de passe** pour changer le mot de passe administrateur.
+- Le nouveau mot de passe est stocké côté serveur (Netlify Blobs) et prend priorité sur les variables d'environnement.
+- Le mot de passe doit contenir au moins 8 caractères.
+
 ### Réinitialisation du mot de passe (question de sécurité)
 
 - Dans le panneau admin, cliquez sur **🔐 Question Sécurité** pour configurer une question et une réponse secrète.
-- Si un admin oublie le mot de passe, il clique sur l'icône **🔒** en bas à droite (à côté de ⚙), puis répond à la question de sécurité pour obtenir une nouvelle session.
+- Si un admin oublie le mot de passe, il clique sur l'icône **🔒** en bas à droite (à côté de ⚙), puis répond à la question de sécurité.
+- Après vérification, l'admin peut définir un nouveau mot de passe directement dans la fenêtre de réinitialisation.
 - La réponse est hashée avec bcrypt et stockée en minuscules (insensible à la casse).
-- Note : cela ne change pas la variable `ADMIN_PASSWORD_HASH` — pour modifier le mot de passe, changez la variable dans le tableau de bord Netlify.
 
 ### Sécurité
 
@@ -161,6 +167,7 @@ Tous les contrôles admin sont regroupés sur une seule barre en haut du panneau
 | **Notifications** | Active/désactive les alertes de nouvelles réservations (vérification toutes les 30 secondes) |
 | **CSV** | Ouvre les filtres d'exportation CSV |
 | **🔐 Question Sécurité** | Configure la question de sécurité pour la réinitialisation |
+| **🔑 Mot de passe** | Changer le mot de passe administrateur depuis le panneau |
 | **Connecté** | Indique la session active (cliquer pour se déconnecter) |
 
 ### Paramètres partagés

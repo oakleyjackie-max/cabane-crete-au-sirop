@@ -3,13 +3,13 @@
  * POST { password: "..." }
  * Returns { token: "jwt..." } on success, 401 on failure.
  *
- * Supports ADMIN_PASSWORD_HASH (bcrypt) or falls back to ADMIN_PASSWORD (plaintext).
+ * Checks blob-stored password first (from in-app change), then env vars.
  * Rate limited: 5 attempts per 15-minute window per IP.
  */
-import bcrypt from "bcryptjs";
 import {
   createToken,
   jsonResponse,
+  verifyPassword,
   checkRateLimit,
   recordFailedAttempt,
   clearRateLimit,
@@ -31,19 +31,15 @@ export default async (request) => {
       return jsonResponse({ error: "Mot de passe incorrect" }, 401);
     }
 
-    const passwordHash = Netlify.env.get("ADMIN_PASSWORD_HASH");
-    const adminPassword = Netlify.env.get("ADMIN_PASSWORD");
-
-    if (!passwordHash && !adminPassword) {
-      console.error("Neither ADMIN_PASSWORD_HASH nor ADMIN_PASSWORD is set");
-      return jsonResponse({ error: "Erreur de configuration serveur" }, 500);
-    }
-
     let valid = false;
-    if (passwordHash) {
-      valid = await bcrypt.compare(password, passwordHash);
-    } else if (adminPassword) {
-      valid = password === adminPassword;
+    try {
+      valid = await verifyPassword(password);
+    } catch (err) {
+      if (err.message === "NO_PASSWORD_CONFIGURED") {
+        console.error("No password configured in blob store or env vars");
+        return jsonResponse({ error: "Erreur de configuration serveur" }, 500);
+      }
+      throw err;
     }
 
     if (!valid) {

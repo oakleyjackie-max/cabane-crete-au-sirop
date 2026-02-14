@@ -8,6 +8,7 @@
  */
 import { SignJWT, jwtVerify } from "jose";
 import { getStore } from "@netlify/blobs";
+import bcrypt from "bcryptjs";
 
 const TOKEN_EXPIRY = "8h";
 const ISSUER = "cabane-crete";
@@ -34,9 +35,9 @@ function getSecret() {
 }
 
 /** Create a signed JWT for an authenticated admin session */
-export async function createToken() {
+export async function createToken(claims = {}) {
   const secret = getSecret();
-  return new SignJWT({ role: "admin" })
+  return new SignJWT({ role: "admin", ...claims })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuer(ISSUER)
     .setAudience(AUDIENCE)
@@ -158,6 +159,38 @@ export async function clearRateLimit(request, action) {
   } catch {
     // Ignore
   }
+}
+
+/**
+ * Verify a plaintext password against stored sources (priority order):
+ * 1. Blob store (set via in-app "change password")
+ * 2. ADMIN_PASSWORD_HASH env var (bcrypt)
+ * 3. ADMIN_PASSWORD env var (legacy plaintext)
+ * Returns true/false, or throws "NO_PASSWORD_CONFIGURED" if none found.
+ */
+export async function verifyPassword(password) {
+  // 1. Check blob-stored password (from in-app change)
+  try {
+    const store = getStore("admin-settings");
+    const storedPw = await store.get("admin-password", { type: "json" });
+    if (storedPw?.passwordHash) {
+      return await bcrypt.compare(password, storedPw.passwordHash);
+    }
+  } catch { /* blob read failure — fall through to env vars */ }
+
+  // 2. Check env var bcrypt hash
+  const passwordHash = Netlify.env.get("ADMIN_PASSWORD_HASH");
+  if (passwordHash) {
+    return await bcrypt.compare(password, passwordHash);
+  }
+
+  // 3. Check legacy plaintext env var
+  const adminPassword = Netlify.env.get("ADMIN_PASSWORD");
+  if (adminPassword) {
+    return password === adminPassword;
+  }
+
+  throw new Error("NO_PASSWORD_CONFIGURED");
 }
 
 /** Sanitize a string: trim + enforce max length */
