@@ -1214,6 +1214,48 @@ function App() {
       {/* Cart Overlay */}
       {cartOpen && <div className="cart-overlay" onClick={() => setCartOpen(false)} />}
 
+      {/* Cart Dropdown — placed outside header to avoid CSS stacking context trap */}
+      <div className={`cart-dropdown ${cartOpen ? 'open' : ''}`} onClick={(e) => e.stopPropagation()}>
+        <div className="cart-dropdown-header">
+          <h3>🛒 Votre Panier</h3>
+          <button className="cart-close-btn" onClick={() => setCartOpen(false)}>✕</button>
+        </div>
+        {cart.length === 0 ? (
+          <p className="cart-empty">Votre panier est vide.</p>
+        ) : (
+          <>
+            <div className="cart-items">
+              {cart.map(item => (
+                <div key={item.id} className="cart-item">
+                  <div className="cart-item-info">
+                    <span className="cart-item-name">{item.name}</span>
+                    <div className="cart-item-controls">
+                      <button
+                        className="cart-qty-btn"
+                        onClick={() => setCart(prev => prev.map(c => c.id === item.id ? { ...c, quantity: Math.max(1, c.quantity - 1) } : c))}
+                      >−</button>
+                      <span className="cart-item-qty">{item.quantity}</span>
+                      <button
+                        className="cart-qty-btn"
+                        onClick={() => setCart(prev => prev.map(c => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c))}
+                      >+</button>
+                    </div>
+                  </div>
+                  <button
+                    className="cart-remove-btn"
+                    onClick={() => setCart(prev => prev.filter(c => c.id !== item.id))}
+                  >🗑</button>
+                </div>
+              ))}
+            </div>
+            {cartError && <div className="cart-error-message">{cartError}</div>}
+            <button className="cart-checkout-btn" onClick={handleCheckout}>
+              Envoyer
+            </button>
+          </>
+        )}
+      </div>
+
       <header className="header">
         <img src="/images/logo.png" alt="Cabane Crête au Sirop" className="logo" />
 
@@ -1234,48 +1276,6 @@ function App() {
               <span className="cart-badge">{getTotalItems()}</span>
             )}
           </button>
-
-          {/* Cart Dropdown */}
-          <div className={`cart-dropdown ${cartOpen ? 'open' : ''}`}>
-            <div className="cart-dropdown-header">
-              <h3>🛒 Votre Panier</h3>
-              <button className="cart-close-btn" onClick={() => setCartOpen(false)}>✕</button>
-            </div>
-            {cart.length === 0 ? (
-              <p className="cart-empty">Votre panier est vide.</p>
-            ) : (
-              <>
-                <div className="cart-items">
-                  {cart.map(item => (
-                    <div key={item.id} className="cart-item">
-                      <div className="cart-item-info">
-                        <span className="cart-item-name">{item.name}</span>
-                        <div className="cart-item-controls">
-                          <button
-                            className="cart-qty-btn"
-                            onClick={() => setCart(prev => prev.map(c => c.id === item.id ? { ...c, quantity: Math.max(1, c.quantity - 1) } : c))}
-                          >−</button>
-                          <span className="cart-item-qty">{item.quantity}</span>
-                          <button
-                            className="cart-qty-btn"
-                            onClick={() => setCart(prev => prev.map(c => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c))}
-                          >+</button>
-                        </div>
-                      </div>
-                      <button
-                        className="cart-remove-btn"
-                        onClick={() => setCart(prev => prev.filter(c => c.id !== item.id))}
-                      >🗑</button>
-                    </div>
-                  ))}
-                </div>
-                {cartError && <div className="cart-error-message">{cartError}</div>}
-                <button className="cart-checkout-btn" onClick={(e) => { e.stopPropagation(); handleCheckout(); }}>
-                  Envoyer
-                </button>
-              </>
-            )}
-          </div>
         </div>
       </header>
 
