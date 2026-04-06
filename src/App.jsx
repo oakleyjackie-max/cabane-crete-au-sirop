@@ -341,6 +341,18 @@ const PRODUCTS = {
     name: 'Caisse - 8 x 540ml',
     fullName: "La Réserve d'Hiver : Caisse de 8 cannes",
     title: '« La Réserve du Maître Sucrier »',
+  },
+  beurre: {
+    id: 'beurre',
+    name: 'Beurre d\'érable 250ml',
+    fullName: "Beurre d'érable pur | Nuage de velours",
+    title: '« Le Beurre de l\'Aube »',
+  },
+  tire: {
+    id: 'tire',
+    name: 'Tire d\'érable 250ml',
+    fullName: "Tire d'érable artisanale | L'Ambre en fusion",
+    title: '« La Coulée d\'Éternité »',
   }
 }
 
@@ -1401,6 +1413,106 @@ function App() {
                   onClick={(e) => addToCart('case', e)}
                 >
                   {addedFeedback === 'case' ? '✓ Ajouté!' : '🛒 Ajouter au Panier'}
+                </button>
+              )}
+            </div>
+
+            {/* Product Card 3 - Le Beurre de l'Aube */}
+            <div
+              className={`product-card ${expandedCards.includes('beurre') ? 'expanded' : ''}`}
+              onClick={() => toggleCard('beurre')}
+            >
+              <div className="product-card-front">
+                <span className="product-title">« Le Beurre de l'Aube »</span>
+                <div className="product-image-container">
+                  <img src="/images/beurre-erable.png" alt="Beurre d'érable pur 250ml" className="product-image" />
+                </div>
+                <h3>Beurre d'érable pur | Nuage de velours</h3>
+                <p className="product-tagline">Une douceur onctueuse qui fond sur la langue — le beurre d'érable comme vous ne l'avez jamais goûté.</p>
+                <div className="expand-indicator">
+                  <span className="expand-icon">{expandedCards.includes('beurre') ? '−' : '+'}</span>
+                  <span className="expand-text">{expandedCards.includes('beurre') ? 'Moins de détails' : 'Plus de détails'}</span>
+                </div>
+              </div>
+              <div className="product-card-details">
+                <div className="product-format">
+                  <strong>Format :</strong> Contenant de 250 ml
+                </div>
+                <p className="product-description">
+                  Fabriqué à partir de notre sirop d'érable pur, ce beurre d'érable artisanal est battu lentement
+                  jusqu'à l'obtention d'une texture aérienne et veloutée. Ni gras, ni artificiel —
+                  seulement la magie de l'érable transformée en nuage de velours doré.
+                  Une gourmandise simple et authentique qui sublime chaque bouchée.
+                </p>
+                <div className="product-uses">
+                  <strong>Idéal pour :</strong>
+                  <ul>
+                    <li>Tartiner généreusement sur du pain frais ou des rôties chaudes.</li>
+                    <li>Garnir des crêpes, gaufres ou scones du matin.</li>
+                    <li>Incorporer dans vos recettes de pâtisserie pour une touche sucrée naturelle.</li>
+                  </ul>
+                </div>
+              </div>
+              {outOfStock ? (
+                <button className="add-to-cart-btn oos-disabled-btn" disabled>
+                  On se voit en 2027
+                </button>
+              ) : (
+                <button
+                  className={`add-to-cart-btn ${addedFeedback === 'beurre' ? 'added' : ''}`}
+                  onClick={(e) => addToCart('beurre', e)}
+                >
+                  {addedFeedback === 'beurre' ? '✓ Ajouté!' : '🛒 Ajouter au Panier'}
+                </button>
+              )}
+            </div>
+
+            {/* Product Card 4 - La Coulée d'Éternité */}
+            <div
+              className={`product-card ${expandedCards.includes('tire') ? 'expanded' : ''}`}
+              onClick={() => toggleCard('tire')}
+            >
+              <div className="product-card-front">
+                <span className="product-title">« La Coulée d'Éternité »</span>
+                <div className="product-image-container">
+                  <img src="/images/tire-erable.png" alt="Tire d'érable artisanale 250ml" className="product-image" />
+                </div>
+                <h3>Tire d'érable artisanale | L'Ambre en fusion</h3>
+                <p className="product-tagline">Le classique des érablières, coulé avec amour — une explosion de saveur à l'état pur.</p>
+                <div className="expand-indicator">
+                  <span className="expand-icon">{expandedCards.includes('tire') ? '−' : '+'}</span>
+                  <span className="expand-text">{expandedCards.includes('tire') ? 'Moins de détails' : 'Plus de détails'}</span>
+                </div>
+              </div>
+              <div className="product-card-details">
+                <div className="product-format">
+                  <strong>Format :</strong> Contenant de 250 ml
+                </div>
+                <p className="product-description">
+                  Notre tire d'érable est cuite à la tradition, versée directement sur la neige fraîche
+                  puis récoltée à la spatule — chaque lot est une œuvre éphémère de nos artisans sucriers.
+                  Épaisse, brillante, débordante de saveur ambrée, elle capture l'essence même du temps des sucres
+                  dans un contenant que vous pouvez ramener chez vous.
+                </p>
+                <div className="product-uses">
+                  <strong>À savourer :</strong>
+                  <ul>
+                    <li>Sur de la neige fraîche pour vivre l'expérience authentique de la cabane à sucre.</li>
+                    <li>En garniture sur de la crème glacée à la vanille.</li>
+                    <li>Comme fondant naturel pour vos desserts et gâteaux maison.</li>
+                  </ul>
+                </div>
+              </div>
+              {outOfStock ? (
+                <button className="add-to-cart-btn oos-disabled-btn" disabled>
+                  On se voit en 2027
+                </button>
+              ) : (
+                <button
+                  className={`add-to-cart-btn ${addedFeedback === 'tire' ? 'added' : ''}`}
+                  onClick={(e) => addToCart('tire', e)}
+                >
+                  {addedFeedback === 'tire' ? '✓ Ajouté!' : '🛒 Ajouter au Panier'}
                 </button>
               )}
             </div>
